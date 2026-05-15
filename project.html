@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로젝트 상세 설명</title>
+    <style>
+        :root { --primary: #3b82f6; --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Apple SD Gothic Neo', sans-serif; line-height: 1.6; padding: 2rem; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 1rem; margin-bottom: 2rem; }
+        .back-link { text-decoration: none; color: #94a3b8; font-weight: bold; }
+        .back-link:hover { color: var(--primary); }
+
+        .detail-card { background: var(--card-bg); padding: 2.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .tech-tag { display: inline-block; background: rgba(59, 130, 246, 0.2); color: var(--primary); padding: 0.3rem 0.8rem; border-radius: 8px; font-size: 0.9rem; margin-bottom: 1.5rem; font-weight: bold; }
+        .description { font-size: 1.1rem; opacity: 0.9; white-space: pre-line; }
+        
+        .btn-group { margin-top: 3rem; }
+        .github-btn { display: inline-block; background: var(--primary); color: white; text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 10px; font-weight: bold; transition: opacity 0.2s; }
+        .github-btn:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 id="title">Loading...</h1>
+            <a href="index.html" class="back-link">&larr; 목록으로 돌아가기</a>
+        </header>
+
+        <div class="detail-card">
+            <div id="tech" class="tech-tag">기술 스택 불러오는 중...</div>
+            <div id="desc" class="description">
+                상세 설명을 불러오는 중입니다...
+            </div>
+
+            <div class="btn-group">
+                <a href="#" id="github-link" target="_blank" class="github-btn">GitHub에서 소스 코드 보기</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // *** [중요] 여기에 본인의 프로젝트별 설명을 직접 추가하세요 ***
+        const projectDetails = {
+            'owsjtld.github.io': {
+                tech: 'HTML5, CSS3, JavaScript (GitHub API)',
+                content: '이 프로젝트는 저의 개인 포트폴리오 사이트입니다.\nGitHub API를 사용하여 실시간으로 저장소 목록을 가져오며, 서버 없이 GitHub Pages로 운영됩니다.'
+            },
+            // 여기에 다른 저장소 이름을 추가하세요
+            'example-repo-name': {
+                tech: 'Python, Pandas',
+                content: '데이터 분석 프로젝트 예시입니다. 엑셀 데이터를 가공하여 시각화하는 기능을 담고 있습니다.'
+            }
+        };
+
+        function loadProject() {
+            const params = new URLSearchParams(window.location.search);
+            const repoName = params.get('repo');
+
+            if (!repoName) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // 기본 데이터 세팅
+            document.getElementById('title').textContent = repoName;
+            document.getElementById('github-link').href = `https://github.com/owsjtld/${repoName}`;
+
+            // 상세 데이터가 있는 경우 매핑
+            const data = projectDetails[repoName];
+            if (data) {
+                document.getElementById('tech').textContent = `사용 기술: ${data.tech}`;
+                document.getElementById('desc').textContent = data.content;
+            } else {
+                document.getElementById('tech').textContent = '사용 기술: 미등록';
+                document.getElementById('desc').textContent = '상세 설명이 등록되지 않은 프로젝트입니다. project.html 파일의 projectDetails 객체에 내용을 추가해 주세요.';
+            }
+        }
+
+        loadProject();
+    </script>
+</body>
+</html>
