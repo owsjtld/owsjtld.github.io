@@ -2,47 +2,73 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>내 서버 없는 웹사이트</title>
+    <title>owsjtld's Game Center</title>
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-            color: white;
-        }
-        .main-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 3rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        }
-        h1 { margin-bottom: 1rem; font-size: 2.5rem; }
-        p { font-size: 1.1rem; opacity: 0.9; }
-        .badge {
-            background: #4ade80;
-            color: #064e3b;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-weight: bold;
-            display: inline-block;
-            margin-top: 1.5rem;
-        }
+        body { background: #222; color: white; text-align: center; margin: 0; overflow: hidden; }
+        canvas { background: #000; display: block; margin: 20px auto; border: 2px solid #555; }
+        .info { font-family: sans-serif; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="main-card">
-        <h1>Hello, World!</h1>
-        <p>이 사이트는 GitHub Pages를 통해 24시간 운영됩니다.</p>
-        <p>내 컴퓨터가 꺼져도, 결제 수단이 없어도 안전합니다.</p>
-        <div class="badge">HTTPS 보안 적용됨</div>
+    <div class="info">
+        <h1>Mini Brick Breaker</h1>
+        <p>마우스를 움직여 바를 조절하세요!</p>
     </div>
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let x = canvas.width / 2;
+        let y = canvas.height - 30;
+        let dx = 2;
+        let dy = -2;
+        const ballRadius = 10;
+        const paddleHeight = 10;
+        const paddleWidth = 75;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+
+        document.addEventListener("mousemove", (e) => {
+            const relativeX = e.clientX - canvas.offsetLeft;
+            if(relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+            }
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 공 그리기
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+
+            // 패들 그리기
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+
+            // 벽 충돌 로직
+            if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
+            if(y + dy < ballRadius) dy = -dy;
+            else if(y + dy > canvas.height - ballRadius) {
+                if(x > paddleX && x < paddleX + paddleWidth) dy = -dy;
+                else {
+                    alert("GAME OVER");
+                    document.location.reload();
+                    clearInterval(interval);
+                }
+            }
+
+            x += dx;
+            y += dy;
+        }
+        const interval = setInterval(draw, 10);
+    </script>
 </body>
 </html>
