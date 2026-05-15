@@ -39,6 +39,25 @@
     </div>
 
     <script>
+        /**
+         * 카드 엘리먼트를 생성하는 공통 함수
+         */
+        function createCard(name, desc, lang) {
+            const card = document.createElement('a');
+            card.className = 'repo-card';
+            card.href = `project.html?repo=${name}`;
+
+            card.innerHTML = `
+                <div class="repo-name">${name}</div>
+                <div class="repo-desc">${desc || '이 프로젝트에 대한 간단한 설명이 아직 없습니다.'}</div>
+                <div class="repo-footer">
+                    <span>● ${lang || 'Etc'}</span>
+                    <span>자세히 보기 &rarr;</span>
+                </div>
+            `;
+            return card;
+        }
+
         async function fetchRepos() {
             const username = 'owsjtld';
             const repoContainer = document.getElementById('repos');
@@ -49,28 +68,34 @@
 
                 repoContainer.innerHTML = ''; 
 
+                // 1. API로 가져온 공개 저장소들을 먼저 뿌려줍니다.
                 repos.forEach(repo => {
-                    if (!repo.fork) {
-                        const card = document.createElement('a');
-                        card.className = 'repo-card';
-                        // 클릭 시 project.html로 이동하며 저장소 이름을 쿼리 스트링으로 전달
-                        card.href = `project.html?repo=${repo.name}`;
-
-                        card.innerHTML = `
-                            <div class="repo-name">${repo.name}</div>
-                            <div class="repo-desc">${repo.description || '이 프로젝트에 대한 간단한 설명이 아직 없습니다.'}</div>
-                            <div class="repo-footer">
-                                <span>● ${repo.language || 'Etc'}</span>
-                                <span>자세히 보기 &rarr;</span>
-                            </div>
-                        `;
+                    // Fork 제외 및 수동으로 추가할 'AI-Programming'은 여기서 중복 노출 방지
+                    if (!repo.fork && repo.name !== 'AI-Programming') {
+                        const card = createCard(repo.name, repo.description, repo.language);
                         repoContainer.appendChild(card);
                     }
                 });
+
+                // 2. 비공개(Private)로 돌릴 프로젝트들을 수동으로 추가합니다.
+                // API 결과와 상관없이 항상 목록에 나타납니다.
+                const aiRepo = createCard(
+                    'AI-Programming', 
+                    'KoBERT, KoGPT2 모델을 활용한 한국어 자연어 처리 및 텍스트 생성 프로젝트 모음입니다.', 
+                    'Python'
+                );
+                repoContainer.appendChild(aiRepo);
+
             } catch (error) {
-                repoContainer.innerHTML = '<p>GitHub 데이터를 가져오지 못했습니다.</p>';
+                console.error("데이터 로드 실패:", error);
+                repoContainer.innerHTML = '<p>데이터를 불러오는 중 오류가 발생했습니다. 하지만 수동 등록 항목은 표시됩니다.</p>';
+                
+                // 에러가 나더라도 수동 항목은 보여줍니다.
+                const aiRepo = createCard('AI-Programming', '한국어 NLP 프로젝트', 'Python');
+                repoContainer.appendChild(aiRepo);
             }
         }
+
         fetchRepos();
     </script>
 </body>
