@@ -2,73 +2,73 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>owsjtld's Game Center</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>owsjtld's Portfolio</title>
     <style>
-        body { background: #222; color: white; text-align: center; margin: 0; overflow: hidden; }
-        canvas { background: #000; display: block; margin: 20px auto; border: 2px solid #555; }
-        .info { font-family: sans-serif; margin-top: 10px; }
+        :root { --primary: #3b82f6; --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc; }
+        body { background-color: var(--bg); color: var(--text); font-family: sans-serif; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+        
+        /* 레포지토리 카드 스타일 */
+        .repo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+        .repo-card { 
+            background: var(--card-bg); padding: 1.5rem; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s;
+            text-decoration: none; color: inherit; display: block;
+        }
+        .repo-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .repo-name { font-weight: bold; color: var(--primary); font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .repo-desc { font-size: 0.9rem; opacity: 0.8; height: 3rem; overflow: hidden; }
+        .repo-lang { font-size: 0.8rem; margin-top: 1rem; color: #94a3b8; }
     </style>
 </head>
 <body>
-    <div class="info">
-        <h1>Mini Brick Breaker</h1>
-        <p>마우스를 움직여 바를 조절하세요!</p>
+    <div class="container">
+        <h1>owsjtld's Project List</h1>
+        <p>GitHub API를 통해 실시간으로 가져온 저장소 목록입니다.</p>
+        
+        <div id="repos" class="repo-grid">
+            <!-- 자바스크립트로 데이터가 여기에 삽입됩니다 -->
+            <p>프로젝트를 불러오는 중...</p>
+        </div>
     </div>
-    <canvas id="gameCanvas" width="480" height="320"></canvas>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        async function fetchRepos() {
+            const username = 'owsjtld';
+            const repoContainer = document.getElementById('repos');
 
-        let x = canvas.width / 2;
-        let y = canvas.height - 30;
-        let dx = 2;
-        let dy = -2;
-        const ballRadius = 10;
-        const paddleHeight = 10;
-        const paddleWidth = 75;
-        let paddleX = (canvas.width - paddleWidth) / 2;
+            try {
+                // 깃허브 API 호출 (최근 업데이트 순으로 정렬)
+                const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+                const repos = await response.json();
 
-        document.addEventListener("mousemove", (e) => {
-            const relativeX = e.clientX - canvas.offsetLeft;
-            if(relativeX > 0 && relativeX < canvas.width) {
-                paddleX = relativeX - paddleWidth / 2;
+                repoContainer.innerHTML = ''; // 로딩 메시지 삭제
+
+                repos.forEach(repo => {
+                    // Fork한 저장소는 제외하고 본인 것만 표시
+                    if (!repo.fork) {
+                        const card = document.createElement('a');
+                        card.className = 'repo-card';
+                        card.href = repo.html_url;
+                        card.target = '_blank';
+
+                        card.innerHTML = `
+                            <div class="repo-name">${repo.name}</div>
+                            <div class="repo-desc">${repo.description || '설명이 없습니다.'}</div>
+                            <div class="repo-lang">● ${repo.language || 'Etc'}</div>
+                        `;
+                        repoContainer.appendChild(card);
+                    }
+                });
+            } catch (error) {
+                repoContainer.innerHTML = '<p>데이터를 불러오는 데 실패했습니다.</p>';
+                console.error(error);
             }
-        });
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 공 그리기
-            ctx.beginPath();
-            ctx.arc(x, y, ballRadius, 0, Math.PI*2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-
-            // 패들 그리기
-            ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-
-            // 벽 충돌 로직
-            if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
-            if(y + dy < ballRadius) dy = -dy;
-            else if(y + dy > canvas.height - ballRadius) {
-                if(x > paddleX && x < paddleX + paddleWidth) dy = -dy;
-                else {
-                    alert("GAME OVER");
-                    document.location.reload();
-                    clearInterval(interval);
-                }
-            }
-
-            x += dx;
-            y += dy;
         }
-        const interval = setInterval(draw, 10);
+
+        fetchRepos();
     </script>
 </body>
 </html>
