@@ -1,0 +1,16 @@
+# yeonam-evaluator/.gitignore
+
+# 가상환경
+venv/
+.venv/
+env/
+
+# 환경 변수 (API 키 포함이므로 절대 금지)
+.env
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# 테스트 및 자동 생성 저장소 데이터 (다이어그램 결과물 제외)
+storage/
