@@ -3,100 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>owsjtld | 프로젝트 포트폴리오</title>
+    <title>연암 독서록 AI 채점 시스템</title>
     <style>
-        :root { --primary: #3b82f6; --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Apple SD Gothic Neo', sans-serif; padding: 2rem; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; }
-        header { margin-bottom: 3rem; text-align: center; }
-        h1 { font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem; }
-        
-        /* 레포지토리 카드 그리드 */
-        .repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .repo-card { 
-            background: var(--card-bg); padding: 1.5rem; border-radius: 16px; 
-            border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;
-            text-decoration: none; color: inherit; display: flex; flex-direction: column;
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 40px 20px;
+            color: #333;
         }
-        .repo-card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.5); }
-        .repo-name { font-weight: bold; color: var(--primary); font-size: 1.3rem; margin-bottom: 0.8rem; }
-        .repo-desc { font-size: 0.95rem; opacity: 0.8; line-height: 1.5; flex-grow: 1; margin-bottom: 1rem; }
-        .repo-footer { font-size: 0.8rem; display: flex; justify-content: space-between; color: #94a3b8; }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        h2 {
+            color: #1a365d;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-top: 0;
+            text-align: center;
+        }
+        .info-box {
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .student-info {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2b6cb0;
+            margin-bottom: 20px;
+            background: #f7fafc;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #f7fafc;
+            color: #4a5568;
+            font-weight: bold;
+        }
+        .score-tag {
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .score-상 { background-color: #c6f6d5; color: #22543d; }
+        .score-중 { background-color: #feebc8; color: #744210; }
+        .score-하 { background-color: #fed7d7; color: #742a2a; }
         
-        .loading { text-align: center; font-size: 1.2rem; margin-top: 5rem; }
+        .comment-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.85em;
+            color: #a0aec0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>owsjtld Project List</h1>
-            <p>직접 개발하고 관리하는 GitHub 저장소 목록입니다.</p>
-        </header>
-        
-        <div id="repos" class="repo-grid">
-            <div class="loading">데이터를 불러오는 중...</div>
-        </div>
+
+<div class="container">
+    <h2>📊 연암 독서록 AI 채점 결과 리포트</h2>
+    
+    <div class="info-box">
+        📝 본 리포트는 외부 제출된 독서록 PDF를 사내 AI 채점 엔진이 분석한 결과입니다.<br>
+        실시간 동기화 스케줄러에 의해 최근 채점된 데이터가 정적으로 표시됩니다.
     </div>
 
-    <script>
-        /**
-         * 카드 엘리먼트를 생성하는 공통 함수
-         */
-        function createCard(name, desc, lang) {
-            const card = document.createElement('a');
-            card.className = 'repo-card';
-            card.href = `project.html?repo=${name}`;
+    <div id="loading" style="text-align: center; padding: 40px; color: #718096;">
+        🔄 최근 채점 데이터를 불러오는 중입니다...
+    </div>
 
-            card.innerHTML = `
-                <div class="repo-name">${name}</div>
-                <div class="repo-desc">${desc || '이 프로젝트에 대한 간단한 설명이 아직 없습니다.'}</div>
-                <div class="repo-footer">
-                    <span>● ${lang || 'Etc'}</span>
-                    <span>자세히 보기 &rarr;</span>
-                </div>
-            `;
-            return card;
-        }
+    <div id="content" style="display: none;">
+        <div class="student-info">
+            👤 대상 학생: <span id="student-name">-</span> (글자 수: <span id="word-count">0</span>자)
+        </div>
 
-        async function fetchRepos() {
-            const username = 'owsjtld';
-            const repoContainer = document.getElementById('repos');
+        <h3>📋 세부 항목별 루브릭 평가</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>평가 항목</th>
+                    <th>평가 등급</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>분량 감점 여부</td><td><span id="score-quantity" class="score-tag">-</span></td></tr>
+                <tr><td>박지원 핵심 사상 분석</td><td><span id="score-analysis" class="score-tag">-</span></td></tr>
+                <tr><td>양반 계층 비판 인식</td><td><span id="score-reflection" class="score-tag">-</span></td></tr>
+                <tr><td>일상생활 실천 계획</td><td><span id="score-plan" class="score-tag">-</span></td></tr>
+                <tr><td>논리적 문장 구성력</td><td><span id="score-logic" class="score-tag">-</span></td></tr>
+            </tbody>
+        </table>
 
-            try {
-                const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
-                const repos = await response.json();
+        <h3>✍️ 이효린 선생님 반 전문가 종합 총평</h3>
+        <div id="final-comment" class="comment-box">-</div>
+    </div>
+</div>
 
-                repoContainer.innerHTML = ''; 
+<div class="footer">
+    © 연암 에듀케이터 시스템 연구소. All 주소 복사 금지 및 보안 규정 준수.
+</div>
 
-                // 1. API로 가져온 공개 저장소들을 먼저 뿌려줍니다.
-                repos.forEach(repo => {
-                    // Fork 제외 및 수동으로 추가할 'AI-Programming'은 여기서 중복 노출 방지
-                    if (!repo.fork && repo.name !== 'AI-Programming') {
-                        const card = createCard(repo.name, repo.description, repo.language);
-                        repoContainer.appendChild(card);
-                    }
-                });
+<script>
+    // 내 노트북의 파이썬 배치가 깃허브에 푸시해 줄 결과 파일 경로
+    // (동적으로 여러 학생을 보려면 뒤에 ?student=파일명 구조로 확장 가능하나, 현재 기본 단일 파일 기준 스펙)
+    const DATA_URL = "./api/result.json"; 
 
-                // 2. 비공개(Private)로 돌릴 프로젝트들을 수동으로 추가합니다.
-                // API 결과와 상관없이 항상 목록에 나타납니다.
-                const aiRepo = createCard(
-                    'AI-Programming', 
-                    'KoBERT, KoGPT2 모델을 활용한 한국어 자연어 처리 및 텍스트 생성 프로젝트 모음입니다.', 
-                    'Python'
-                );
-                repoContainer.appendChild(aiRepo);
+    async function loadEvaluationResult() {
+        const loadingDiv = document.getElementById('loading');
+        const contentDiv = document.getElementById('content');
 
-            } catch (error) {
-                console.error("데이터 로드 실패:", error);
-                repoContainer.innerHTML = '<p>데이터를 불러오는 중 오류가 발생했습니다. 하지만 수동 등록 항목은 표시됩니다.</p>';
-                
-                // 에러가 나더라도 수동 항목은 보여줍니다.
-                const aiRepo = createCard('AI-Programming', '한국어 NLP 프로젝트', 'Python');
-                repoContainer.appendChild(aiRepo);
+        try {
+            const response = await fetch(DATA_URL);
+            if (!response.ok) {
+                throw new Error("아직 채점 완료된 결과 파일(result.json)이 저장소에 없습니다.");
             }
-        }
+            
+            const resData = await response.json();
+            if (resData.success && resData.data) {
+                const evalData = resData.data;
+                
+                // HTML 엘리먼트에 데이터 매핑
+                document.getElementById('student-name').innerText = evalData.student_name;
+                document.getElementById('word-count').innerText = evalData.word_count.toLocaleString();
+                document.getElementById('final-comment').innerText = evalData.final_comment;
+                
+                // 루브릭 점수 매핑 및 스타일 적용
+                const scores = evalData.scores;
+                setupScore('score-quantity', scores.quantity);
+                setupScore('score-analysis', scores.analysis);
+                setupScore('score-reflection', scores.reflection);
+                setupScore('score-plan', scores.plan);
+                setupScore('score-logic', scores.logic);
 
-        fetchRepos();
-    </script>
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+            }
+        } catch (error) {
+            loadingDiv.innerHTML = `<span style="color: #e53e3e; font-weight: bold;">❌ 오류: ${error.message}</span>`;
+        }
+    }
+
+    function setupScore(elementId, scoreValue) {
+        const el = document.getElementById(elementId);
+        el.innerText = scoreValue;
+        el.className = `score-tag score-${scoreValue}`; // 상/중/하 클래스 부여로 색상 변경
+    }
+
+    // 페이지 로드 시 정적 JSON 데이터 자동 수신
+    window.onload = loadEvaluationResult;
+</script>
 </body>
 </html>
