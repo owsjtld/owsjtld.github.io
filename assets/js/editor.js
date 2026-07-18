@@ -191,6 +191,32 @@ function maybeAutoCloseTag(textarea, inputEvent) {
   textarea.selectionStart = textarea.selectionEnd = pos;
 }
 
+// "{"를 치면 "}"를 바로 뒤에 자동으로 만들어준다(예: { 입력 → {|}, 커서는 그 사이) —
+// maybeAutoCloseTag(HTML 태그)와 똑같은 이유·같은 패턴: CSS 규칙에서 닫는 중괄호를
+// 깜빡하는 걸 애초에 막는다(사용자가 명시적으로 요청, 2026-07-18). CSS/JS 칸 모두에
+// 적용된다(HTML 칸에도 적용은 되지만, HTML 내용에 "{"를 직접 쓸 일은 거의 없다).
+// "["/"("는 일부러 안 넣었다 — 특히 "("는 함수 호출(예: querySelector(...))에서
+// 훨씬 자주 쓰이는데, 닫는 괄호를 직접 타이핑해서 넘어가는(type-over) 처리까지
+// 없이 자동 삽입만 하면 오히려 중복 괄호가 더 자주 생길 위험이 있어 이번엔 범위를
+// "{" 하나로 좁혔다.
+var AUTO_CLOSE_BRACKETS = { "{": "}" };
+
+function maybeAutoCloseBracket(textarea, inputEvent) {
+  if (!inputEvent || inputEvent.inputType !== "insertText") return;
+  var closeChar = AUTO_CLOSE_BRACKETS[inputEvent.data];
+  if (!closeChar) return;
+  var pos = textarea.selectionStart;
+  if (pos !== textarea.selectionEnd) return;
+  var value = textarea.value;
+  if (value.charAt(pos - 1) !== inputEvent.data) return;
+  // 바로 뒤에 이미 닫는 짝이 있으면(예: 지웠다 다시 친 경우) 또 만들지 않는다 —
+  // maybeAutoCloseTag와 같은 이유의 같은 방어.
+  if (value.charAt(pos) === closeChar) return;
+
+  textarea.value = value.slice(0, pos) + closeChar + value.slice(pos);
+  textarea.selectionStart = textarea.selectionEnd = pos;
+}
+
 var INDENT_UNIT = "  "; // 들여쓰기 한 칸 = 스페이스 2개
 
 function currentLineIndent(value, pos) {
@@ -330,75 +356,244 @@ function createPlayground(root, options) {
     js: options.js || ""
   };
   var labels = { html: "HTML", css: "CSS", js: "JavaScript" };
+  // 기본값은 true(기존 동작 그대로) — 타이핑할 때마다 500ms 후 자동으로 미리보기가
+  // 갱신된다. false로 주면 타이핑 중엔 미리보기를 안 건드리고(문법 강조/줄번호는
+  // 계속 실시간으로 갱신됨) "실행 ▶" 버튼을 눌러야만 반영된다. 입문 단계는 "치면
+  // 바로 옆에서 결과가 보인다"는 즉각 피드백이 중요해서 그대로 두고, 주니어/시니어처럼
+  // JS 로직이 복잡해지는 미션은 태그를 다 닫기 전(예: "<p")처럼 타이핑 중간의 미완성
+  // 상태가 그대로 미리보기에 깜빡여 보이는 게 오히려 방해가 될 수 있어서 이 옵션을
+  // 추가함(사용자가 직접 겪고 지적한 문제) — 저장(onChange)은 이 옵션과 무관하게
+  // 항상 타이핑 500ms 후 debounce로 계속 동작한다.
+  var autoRun = options.autoRun !== false;
+  // 여러 칸(html/css/js)을 나란히 쌓아 한 화면에 다 보여주는 대신, 탭 하나씩 눌러
+  // 전환하는 방식으로 보여줄지. 주니어/시니어처럼 JS 로직이 길어지는 미션에서 세 칸이
+  // 동시에 다 보이는 대신 한 번에 하나씩만 보면서 화면을 덜 어수선하게 쓰고 싶다는
+  // 사용자 요청으로 추가함(2026-07-18, `assets/js/advanced-editor.js`의 탭 UI와
+  // 같은 방식) — 미리보기 칸(오른쪽)은 그대로 두 칸짜리 레이아웃을 유지하고, 왼쪽
+  // 입력 영역만 이렇게 바뀐다.
+  var tabbed = !!options.tabbed;
 
   var uid = "pg-" + Math.random().toString(36).slice(2, 9);
 
-  var editorsHtml = "";
-  panels.forEach(function (key) {
-    editorsHtml +=
-      '<div class="editor-panel">' +
-        '<label for="' + uid + '-' + key + '">' + labels[key] + '</label>' +
-        '<div class="code-editor">' +
-          '<div class="code-gutter" id="' + uid + '-' + key + '-gutter" aria-hidden="true"></div>' +
-          '<div class="code-surface">' +
-            '<pre class="code-highlight"><code id="' + uid + '-' + key + '-hl"></code></pre>' +
-            '<textarea id="' + uid + '-' + key + '" class="code-input" spellcheck="false"></textarea>' +
+  var editorsHtml;
+  if (tabbed) {
+    var tabsHtml = panels
+      .map(function (key) {
+        return '<button type="button" class="advanced-editor-tab" data-key="' + key + '">' + labels[key] + "</button>";
+      })
+      .join("");
+    editorsHtml =
+      '<div class="advanced-editor-toolbar">' +
+        '<div class="advanced-editor-tabs">' + tabsHtml + "</div>" +
+        '<button type="button" class="btn advanced-fullscreen-btn">⤢ 전체화면</button>' +
+      "</div>" +
+      '<div class="code-editor">' +
+        '<div class="code-gutter" id="' + uid + '-gutter" aria-hidden="true"></div>' +
+        '<div class="code-surface">' +
+          '<pre class="code-highlight"><code id="' + uid + '-hl"></code></pre>' +
+          '<textarea id="' + uid + '-input" class="code-input" spellcheck="false"></textarea>' +
+        "</div>" +
+      "</div>";
+  } else {
+    editorsHtml = "";
+    panels.forEach(function (key) {
+      editorsHtml +=
+        '<div class="editor-panel">' +
+          '<label for="' + uid + '-' + key + '">' + labels[key] + '</label>' +
+          '<div class="code-editor">' +
+            '<div class="code-gutter" id="' + uid + '-' + key + '-gutter" aria-hidden="true"></div>' +
+            '<div class="code-surface">' +
+              '<pre class="code-highlight"><code id="' + uid + '-' + key + '-hl"></code></pre>' +
+              '<textarea id="' + uid + '-' + key + '" class="code-input" spellcheck="false"></textarea>' +
+            '</div>' +
           '</div>' +
-        '</div>' +
-      '</div>';
-  });
+        '</div>';
+    });
+  }
 
   root.innerHTML =
-    '<div class="playground">' +
-      '<div class="playground-editors">' + editorsHtml + '</div>' +
+    '<div class="playground' + (tabbed ? " tabbed" : "") + '">' +
+      '<div class="playground-editors' + (tabbed ? " tabbed" : "") + '">' + editorsHtml + '</div>' +
       '<div class="playground-preview">' +
         '<div class="preview-toolbar">' +
-          '<span>미리보기</span>' +
+          '<span>' + (autoRun ? "미리보기" : "미리보기 (실행 버튼을 눌러야 갱신돼요)") + '</span>' +
           '<button type="button" class="btn run-btn">실행 ▶</button>' +
         '</div>' +
         '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts"></iframe>' +
       '</div>' +
     '</div>';
 
-  var inputs = {};
-  var highlightEls = {};
-  var gutterEls = {};
-  panels.forEach(function (key) {
-    var el = root.querySelector("#" + uid + "-" + key);
-    el.value = fixed[key];
-    inputs[key] = el;
-    highlightEls[key] = root.querySelector("#" + uid + "-" + key + "-hl");
-    gutterEls[key] = root.querySelector("#" + uid + "-" + key + "-gutter");
-  });
-
   var iframe = root.querySelector(".preview-frame");
   var runBtn = root.querySelector(".run-btn");
 
-  function currentValue(key) {
-    return inputs[key] ? inputs[key].value : fixed[key];
-  }
+  // 탭 모드/스택 모드는 DOM 구조가 아예 달라서(공유 textarea 하나 vs 칸마다 textarea)
+  // currentValue/updateVisual/syncScroll/bindEditorEvents를 모드별로 따로 만들어
+  // 대입한다 — run()/notifyChange()/scheduleRun()/getCode()/setCode()는 그 결과인
+  // currentValue()만 통해서 값을 주고받으므로 모드를 몰라도 된다.
+  var currentValue, updateVisual, syncScroll, bindEditorEvents;
+  var valuesState = {};
+  var inputs, highlightEls, gutterEls; // 스택 모드 전용
+  var sharedInput, sharedHighlightEl, sharedGutterEl, activeKey; // 탭 모드 전용
 
-  function updateVisual(key) {
-    var value = currentValue(key);
-    var highlighter = HIGHLIGHTERS[key];
-    var html = highlighter ? highlighter(value) : escapeHtml(value);
-    // <pre>는 맨 끝 개행만 있으면 마지막 빈 줄을 그려주지 않아 textarea와 줄 수가
-    // 어긋난다 — 끝에 공백 하나를 더 붙여서 그 빈 줄에도 높이가 생기게 한다.
-    if (html.charAt(html.length - 1) === "\n") html += " ";
-    highlightEls[key].innerHTML = html;
+  if (tabbed) {
+    var playgroundRoot = root.querySelector(".playground");
+    var tabEls = Array.prototype.slice.call(root.querySelectorAll(".advanced-editor-tab"));
+    var fullscreenBtn = root.querySelector(".advanced-fullscreen-btn");
+    sharedInput = root.querySelector("#" + uid + "-input");
+    sharedHighlightEl = root.querySelector("#" + uid + "-hl");
+    sharedGutterEl = root.querySelector("#" + uid + "-gutter");
+    activeKey = panels[0];
+    panels.forEach(function (key) { valuesState[key] = fixed[key]; });
+    sharedInput.value = valuesState[activeKey];
 
-    var lineCount = value.split("\n").length;
-    var numbers = [];
-    for (var i = 1; i <= lineCount; i++) numbers.push(i);
-    gutterEls[key].textContent = numbers.join("\n");
-  }
+    // 지금 활성 탭의 textarea 내용을 메모리상 valuesState에 반영한다. 탭을 바꾸기
+    // 직전엔 반드시 호출해야 한다 — 안 하면 방금 타이핑한 내용이 탭 전환 시 사라진
+    // 것처럼 보이는 버그가 생긴다(advanced-editor.js의 flushActiveFile과 같은 이유).
+    function flushActive() {
+      valuesState[activeKey] = sharedInput.value;
+    }
 
-  function syncScroll(key) {
-    var ta = inputs[key];
-    var pre = highlightEls[key].parentElement;
-    pre.scrollTop = ta.scrollTop;
-    pre.scrollLeft = ta.scrollLeft;
-    gutterEls[key].scrollTop = ta.scrollTop;
+    currentValue = function (key) {
+      return key === activeKey ? sharedInput.value : valuesState[key];
+    };
+
+    updateVisual = function () {
+      var value = sharedInput.value;
+      var highlighter = HIGHLIGHTERS[activeKey];
+      var html = highlighter ? highlighter(value) : escapeHtml(value);
+      if (html.charAt(html.length - 1) === "\n") html += " ";
+      sharedHighlightEl.innerHTML = html;
+
+      var lineCount = value.split("\n").length;
+      var numbers = [];
+      for (var i = 1; i <= lineCount; i++) numbers.push(i);
+      sharedGutterEl.textContent = numbers.join("\n");
+    };
+
+    syncScroll = function () {
+      var pre = sharedHighlightEl.parentElement;
+      pre.scrollTop = sharedInput.scrollTop;
+      pre.scrollLeft = sharedInput.scrollLeft;
+      sharedGutterEl.scrollTop = sharedInput.scrollTop;
+    };
+
+    function setActiveTabUi() {
+      tabEls.forEach(function (btn) {
+        btn.classList.toggle("active", btn.dataset.key === activeKey);
+      });
+    }
+    setActiveTabUi();
+
+    tabEls.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var key = btn.dataset.key;
+        if (key === activeKey) return;
+        flushActive();
+        activeKey = key;
+        sharedInput.value = valuesState[activeKey];
+        setActiveTabUi();
+        updateVisual();
+      });
+    });
+
+    fullscreenBtn.addEventListener("click", function () {
+      playgroundRoot.classList.toggle("fullscreen");
+      fullscreenBtn.textContent = playgroundRoot.classList.contains("fullscreen") ? "⤡ 전체화면 닫기" : "⤢ 전체화면";
+    });
+
+    bindEditorEvents = function (scheduleRun) {
+      updateVisual();
+      sharedInput.addEventListener("keydown", function (e) {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          handleTabKey(sharedInput, e.shiftKey);
+          updateVisual();
+          scheduleRun();
+          return;
+        }
+        if (e.key !== "Enter" || e.isComposing) return;
+        e.preventDefault();
+        handleEnterKey(sharedInput);
+        updateVisual();
+        scheduleRun();
+      });
+      sharedInput.addEventListener("input", function (e) {
+        if (activeKey === "html") maybeAutoCloseTag(sharedInput, e);
+        maybeAutoCloseBracket(sharedInput, e);
+        maybeOutdentClosingBracket(sharedInput, e);
+        updateVisual();
+        scheduleRun();
+      });
+      sharedInput.addEventListener("scroll", syncScroll);
+    };
+  } else {
+    inputs = {};
+    highlightEls = {};
+    gutterEls = {};
+    panels.forEach(function (key) {
+      var el = root.querySelector("#" + uid + "-" + key);
+      el.value = fixed[key];
+      inputs[key] = el;
+      highlightEls[key] = root.querySelector("#" + uid + "-" + key + "-hl");
+      gutterEls[key] = root.querySelector("#" + uid + "-" + key + "-gutter");
+    });
+
+    currentValue = function (key) {
+      return inputs[key] ? inputs[key].value : fixed[key];
+    };
+
+    updateVisual = function (key) {
+      var value = currentValue(key);
+      var highlighter = HIGHLIGHTERS[key];
+      var html = highlighter ? highlighter(value) : escapeHtml(value);
+      // <pre>는 맨 끝 개행만 있으면 마지막 빈 줄을 그려주지 않아 textarea와 줄 수가
+      // 어긋난다 — 끝에 공백 하나를 더 붙여서 그 빈 줄에도 높이가 생기게 한다.
+      if (html.charAt(html.length - 1) === "\n") html += " ";
+      highlightEls[key].innerHTML = html;
+
+      var lineCount = value.split("\n").length;
+      var numbers = [];
+      for (var i = 1; i <= lineCount; i++) numbers.push(i);
+      gutterEls[key].textContent = numbers.join("\n");
+    };
+
+    syncScroll = function (key) {
+      var ta = inputs[key];
+      var pre = highlightEls[key].parentElement;
+      pre.scrollTop = ta.scrollTop;
+      pre.scrollLeft = ta.scrollLeft;
+      gutterEls[key].scrollTop = ta.scrollTop;
+    };
+
+    bindEditorEvents = function (scheduleRun) {
+      panels.forEach(function (key) {
+        updateVisual(key);
+        inputs[key].addEventListener("keydown", function (e) {
+          if (e.key === "Tab") {
+            e.preventDefault();
+            handleTabKey(inputs[key], e.shiftKey);
+            updateVisual(key);
+            scheduleRun();
+            return;
+          }
+          if (e.key !== "Enter" || e.isComposing) return;
+          e.preventDefault();
+          handleEnterKey(inputs[key]);
+          updateVisual(key);
+          scheduleRun();
+        });
+        inputs[key].addEventListener("input", function (e) {
+          if (key === "html") maybeAutoCloseTag(inputs[key], e);
+          maybeAutoCloseBracket(inputs[key], e);
+          maybeOutdentClosingBracket(inputs[key], e);
+          updateVisual(key);
+          scheduleRun();
+        });
+        inputs[key].addEventListener("scroll", function () {
+          syncScroll(key);
+        });
+      });
+    };
   }
 
   function run() {
@@ -424,37 +619,12 @@ function createPlayground(root, options) {
   function scheduleRun() {
     clearTimeout(timer);
     timer = setTimeout(function () {
-      run();
+      if (autoRun) run();
       notifyChange();
     }, 500);
   }
 
-  panels.forEach(function (key) {
-    updateVisual(key);
-    inputs[key].addEventListener("keydown", function (e) {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        handleTabKey(inputs[key], e.shiftKey);
-        updateVisual(key);
-        scheduleRun();
-        return;
-      }
-      if (e.key !== "Enter" || e.isComposing) return;
-      e.preventDefault();
-      handleEnterKey(inputs[key]);
-      updateVisual(key);
-      scheduleRun();
-    });
-    inputs[key].addEventListener("input", function (e) {
-      if (key === "html") maybeAutoCloseTag(inputs[key], e);
-      maybeOutdentClosingBracket(inputs[key], e);
-      updateVisual(key);
-      scheduleRun();
-    });
-    inputs[key].addEventListener("scroll", function () {
-      syncScroll(key);
-    });
-  });
+  bindEditorEvents(scheduleRun);
   runBtn.addEventListener("click", function () {
     run();
     notifyChange();
@@ -468,12 +638,20 @@ function createPlayground(root, options) {
     },
     setCode: function (code) {
       code = code || {};
-      panels.forEach(function (key) {
-        if (code[key] !== undefined) {
-          inputs[key].value = code[key];
-          updateVisual(key);
-        }
-      });
+      if (tabbed) {
+        panels.forEach(function (key) {
+          if (code[key] !== undefined) valuesState[key] = code[key];
+        });
+        sharedInput.value = valuesState[activeKey];
+        updateVisual();
+      } else {
+        panels.forEach(function (key) {
+          if (code[key] !== undefined) {
+            inputs[key].value = code[key];
+            updateVisual(key);
+          }
+        });
+      }
       run();
     },
     run: run

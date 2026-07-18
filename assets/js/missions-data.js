@@ -33,6 +33,9 @@ import htmlDivSpanBasics from "./missions/html-div-span-basics.js";
 import cssBorderIntro from "./missions/css-border-intro.js";
 import cssPaddingIntro from "./missions/css-padding-intro.js";
 import cssMarginIntro from "./missions/css-margin-intro.js";
+import cssFlexboxRowIntro from "./missions/css-flexbox-row-intro.js";
+import cssFlexboxJustifyAlignIntro from "./missions/css-flexbox-justify-align-intro.js";
+import cssGridIntro from "./missions/css-grid-intro.js";
 import jsTextcontentIntro from "./missions/js-textcontent-intro.js";
 import htmlListUnordered from "./missions/html-list-unordered.js";
 import htmlListOrdered from "./missions/html-list-ordered.js";
@@ -42,6 +45,9 @@ import htmlSemanticSkeleton from "./missions/html-semantic-skeleton.js";
 import htmlSemanticContent from "./missions/html-semantic-content.js";
 import htmlTableBasics from "./missions/html-table-basics.js";
 import htmlFormBasics from "./missions/html-form-basics.js";
+import htmlStrongEm from "./missions/html-strong-em.js";
+import htmlBrHr from "./missions/html-br-hr.js";
+import htmlBlockquote from "./missions/html-blockquote.js";
 import htmlStyleScriptEmbed from "./missions/html-style-script-embed.js";
 import cssContentProperty from "./missions/css-content-property.js";
 import jsClickEventIntro from "./missions/js-click-event-intro.js";
@@ -54,6 +60,13 @@ import juniorTabs from "./missions/junior-tabs.js";
 import juniorStarRating from "./missions/junior-star-rating.js";
 import juniorTodoList from "./missions/junior-todo-list.js";
 import juniorFormValidation from "./missions/junior-form-validation.js";
+import jsArrayLoopIntro from "./missions/js-array-loop-intro.js";
+import juniorFilterButtons from "./missions/junior-filter-buttons.js";
+import jsObjectBasics from "./missions/js-object-basics.js";
+import juniorCardList from "./missions/junior-card-list.js";
+import jsArraySliceIntro from "./missions/js-array-slice-intro.js";
+import juniorPagination from "./missions/junior-pagination.js";
+import jsModuleImportIntro from "./missions/js-module-import-intro.js";
 import seniorXssTextcontent from "./missions/senior-xss-textcontent.js";
 import seniorEvalDanger from "./missions/senior-eval-danger.js";
 
@@ -65,6 +78,9 @@ export var MISSIONS = [
   cssBorderIntro,
   cssPaddingIntro,
   cssMarginIntro,
+  cssFlexboxRowIntro,
+  cssFlexboxJustifyAlignIntro,
+  cssGridIntro,
   jsTextcontentIntro,
   htmlListUnordered,
   htmlListOrdered,
@@ -74,6 +90,9 @@ export var MISSIONS = [
   htmlSemanticContent,
   htmlTableBasics,
   htmlFormBasics,
+  htmlStrongEm,
+  htmlBrHr,
+  htmlBlockquote,
   htmlStyleScriptEmbed,
   cssContentProperty,
   jsClickEventIntro,
@@ -86,6 +105,13 @@ export var MISSIONS = [
   juniorStarRating,
   juniorTodoList,
   juniorFormValidation,
+  jsArrayLoopIntro,
+  juniorFilterButtons,
+  jsObjectBasics,
+  juniorCardList,
+  jsArraySliceIntro,
+  juniorPagination,
+  jsModuleImportIntro,
   seniorXssTextcontent,
   seniorEvalDanger
 ];

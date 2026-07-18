@@ -68,16 +68,47 @@ import { MISSIONS } from "./missions-data.js";
     pre.addEventListener("copy", function (e) { e.preventDefault(); });
   });
 
-  var playgroundOptions = {
-    html: inheritedHtml || (ownSaved && ownSaved.html) || mission.starter.html,
-    css: (ownSaved && ownSaved.css) || mission.starter.css,
-    js: (ownSaved && ownSaved.js) || mission.starter.js,
-    panels: mission.panels,
-    onChange: function (code) {
-      saveCode(mission.id, code);
-    }
-  };
-  var pg = createPlayground(document.getElementById("playground"), playgroundOptions);
+  // 고급 에디터(파일 여러 개 + 탭) 미션은 mission.advancedEditor === true로 표시된다.
+  // startFromMission 이어받기는 HTML 한 칸짜리 일반 미션 전용 개념이라 여기엔 해당 없다 —
+  // 그래서 옵션을 만드는 로직 자체를 두 갈래로 나눈다.
+  var pg;
+  if (mission.advancedEditor) {
+    var savedFiles = (ownSaved && ownSaved.files) || {};
+    var advancedOptions = {
+      files: {},
+      fileOrder: mission.fileOrder,
+      entry: mission.entry,
+      bodyHtml: mission.bodyHtml,
+      onChange: function (code) {
+        saveCode(mission.id, code);
+      }
+    };
+    (mission.fileOrder || Object.keys(mission.starter.files)).forEach(function (name) {
+      advancedOptions.files[name] = savedFiles[name] !== undefined ? savedFiles[name] : mission.starter.files[name];
+    });
+    pg = createAdvancedPlayground(document.getElementById("playground"), advancedOptions);
+  } else {
+    var playgroundOptions = {
+      html: inheritedHtml || (ownSaved && ownSaved.html) || mission.starter.html,
+      css: (ownSaved && ownSaved.css) || mission.starter.css,
+      js: (ownSaved && ownSaved.js) || mission.starter.js,
+      panels: mission.panels,
+      // 탭 UI(editor.js의 tabbed 옵션)는 모든 미션에 공통으로 적용한다 — html/css/js를
+      // 동시에 쌓아 보여주는 대신 탭으로 하나씩 전환하며 보게 해서 화면을 덜 어수선하게
+      // 쓴다(입문처럼 칸이 하나뿐인 미션도 탭 UI로 통일).
+      // autoRun은 굳이 안 넘겨서 기본값(true, 자동실행)을 모든 미션이 그대로 쓴다 —
+      // "타이핑하면 바로 옆에서 결과가 보인다"는 즉각 피드백이 홈 화면 문구와도
+      // 일치해야 한다는 사용자 의견으로, 주니어/시니어만 실행 버튼 방식으로 뒀던 걸
+      // 되돌림(2026-07-18). 원래 그 방식을 도입했던 이유(타이핑 중간의 미완성 태그/
+      // 중괄호가 미리보기에 깜빡이는 것)는 maybeAutoCloseBracket({ 자동 닫기)로
+      // 근본 원인 쪽을 고쳐서 해소했다.
+      tabbed: true,
+      onChange: function (code) {
+        saveCode(mission.id, code);
+      }
+    };
+    pg = createPlayground(document.getElementById("playground"), playgroundOptions);
+  }
   var feedbackEl = document.getElementById("feedback");
   var checkBtn = document.getElementById("check-btn");
 

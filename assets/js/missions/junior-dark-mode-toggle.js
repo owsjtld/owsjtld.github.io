@@ -9,8 +9,10 @@ export default {
   summary: "버튼을 누르면 페이지 전체가 라이트/다크 모드로 바뀌는 토글을 직접 만들어봐요.",
   instructions:
     "<p>지금까지 배운 두 가지 — <strong>클릭 이벤트</strong>와 <strong>classList.toggle</strong> — 를 " +
-    "합쳐서 실제 컴포넌트를 만들어볼게요. 버튼을 클릭할 때마다 <code>document.body</code>에 " +
-    "원하는 이름의 클래스를 토글하고, CSS에서 그 클래스가 있을 때의 스타일(어두운 배경, " +
+    "합쳐서 실제 컴포넌트를 만들어볼게요. 지금까지는 <code>document.querySelector(\"선택자\")</code>로 " +
+    "페이지 안의 특정 요소 하나만 골랐다면, 이번엔 <code>document.body</code>를 써볼게요 — " +
+    "이건 <code>&lt;body&gt;</code> 태그, 즉 <strong>페이지 전체</strong>를 가리켜요. 버튼을 클릭할 때마다 " +
+    "<code>document.body</code>에 원하는 이름의 클래스를 토글하고, CSS에서 그 클래스가 있을 때의 스타일(어두운 배경, " +
     "밝은 글자색 등)을 정하면 다크모드 토글이 완성돼요.</p>" +
     "<p>이번엔 클래스 이름도 직접 정하는 거예요 — 예시는 <code>dark</code>를 쓰지만 원하는 " +
     "이름으로 지어도 됩니다.</p>" +
