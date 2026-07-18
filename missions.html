@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미션 목록 — CODE-LEARN</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="index.html">CODE-LEARN</a>
+  <nav>
+    <a href="sandbox.html">자유 연습</a>
+    <a href="missions.html" class="active">미션</a>
+  </nav>
+</header>
+
+<main>
+  <h1 style="margin-bottom:4px;">미션으로 배우기</h1>
+  <p style="color:var(--muted); margin-top:0;">하나씩 순서대로 풀어보세요. 완료한 미션은 이 브라우저에 표시가 남아요.</p>
+
+  <div class="mission-filter-bar" id="filter-bar"></div>
+  <div class="mission-list" id="mission-list"></div>
+  <div class="mission-pagination" id="pagination"></div>
+</main>
+
+<script src="assets/js/storage.js"></script>
+<script type="module">
+  import { MISSIONS } from "./assets/js/missions-data.js";
+
+  // "전체" 외에 여기 나열된 단계만 필터 버튼으로 보인다. 아직 그 단계 미션이 없어도
+  // 버튼은 미리 보여준다(예: 주니어) — 목록이 비면 안내 문구만 뜬다.
+  var TIERS = ["전체", "입문", "주니어", "시니어"];
+  // 4의 배수로 둔다 — 한 줄에 보통 4칸씩 들어가는 화면 폭에서, 6처럼 4의 배수가
+  // 아니면 마지막 줄이 어중간하게(2칸만 차고 2칸은 빈 채로) 끝나 보기 안 좋다.
+  var PAGE_SIZE = 8;
+  var state = { tier: "전체", page: 1 };
+
+  var progress = getProgress();
+  var filterBarEl = document.getElementById("filter-bar");
+  var listEl = document.getElementById("mission-list");
+  var paginationEl = document.getElementById("pagination");
+
+  function filteredMissions() {
+    if (state.tier === "전체") return MISSIONS;
+    return MISSIONS.filter(function (m) { return m.tier === state.tier; });
+  }
+
+  function renderFilterBar() {
+    filterBarEl.innerHTML = "";
+    TIERS.forEach(function (tier) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filter-btn" + (state.tier === tier ? " active" : "");
+      btn.textContent = tier;
+      btn.addEventListener("click", function () {
+        state.tier = tier;
+        state.page = 1;
+        renderAll();
+      });
+      filterBarEl.appendChild(btn);
+    });
+  }
+
+  function renderList() {
+    var missions = filteredMissions();
+    var totalPages = Math.max(1, Math.ceil(missions.length / PAGE_SIZE));
+    if (state.page > totalPages) state.page = totalPages;
+    var start = (state.page - 1) * PAGE_SIZE;
+    var pageMissions = missions.slice(start, start + PAGE_SIZE);
+
+    listEl.innerHTML = "";
+    if (pageMissions.length === 0) {
+      listEl.innerHTML = '<p class="mission-empty">아직 이 단계의 미션이 없어요. 곧 추가될 예정이에요.</p>';
+      return;
+    }
+    pageMissions.forEach(function (mission) {
+      var card = document.createElement("a");
+      card.className = "mission-card";
+      card.href = "mission.html?id=" + encodeURIComponent(mission.id);
+      card.innerHTML =
+        (progress[mission.id] ? '<span class="done-badge">완료</span>' : "") +
+        '<div class="level">' + mission.level + "</div>" +
+        "<h3>" + mission.title + "</h3>" +
+        "<div>" + mission.summary + "</div>";
+      listEl.appendChild(card);
+    });
+  }
+
+  function renderPagination() {
+    var totalPages = Math.max(1, Math.ceil(filteredMissions().length / PAGE_SIZE));
+    paginationEl.innerHTML = "";
+    if (totalPages <= 1) return;
+
+    var prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "btn";
+    prevBtn.textContent = "이전";
+    prevBtn.disabled = state.page <= 1;
+    prevBtn.addEventListener("click", function () {
+      state.page -= 1;
+      renderAll();
+    });
+
+    var indicator = document.createElement("span");
+    indicator.className = "pagination-indicator";
+    indicator.textContent = state.page + " / " + totalPages;
+
+    var nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "btn";
+    nextBtn.textContent = "다음";
+    nextBtn.disabled = state.page >= totalPages;
+    nextBtn.addEventListener("click", function () {
+      state.page += 1;
+      renderAll();
+    });
+
+    paginationEl.appendChild(prevBtn);
+    paginationEl.appendChild(indicator);
+    paginationEl.appendChild(nextBtn);
+  }
+
+  function renderAll() {
+    renderFilterBar();
+    renderList();
+    renderPagination();
+  }
+
+  renderAll();
+</script>
+</body>
+</html>
