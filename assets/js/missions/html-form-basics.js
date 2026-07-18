@@ -42,6 +42,17 @@ export default {
     if (!form.querySelector("input")) {
       return { pass: false, message: "input 태그를 만들어보세요." };
     }
+    var labelFor = (label.getAttribute("for") || "").trim();
+    var linkedEl = labelFor &&
+      Array.prototype.filter.call(form.querySelectorAll("[id]"), function (el) {
+        return el.id === labelFor;
+      })[0];
+    if (!linkedEl) {
+      return {
+        pass: false,
+        message: 'label의 for 속성에, 연결하고 싶은 입력칸의 id와 똑같은 값을 적어보세요 (예: <label for="name">, <input id="name">).'
+      };
+    }
     var select = form.querySelector("select");
     if (!select || select.querySelectorAll("option").length < 2) {
       return { pass: false, message: "select 태그 안에 option을 2개 이상 만들어보세요." };

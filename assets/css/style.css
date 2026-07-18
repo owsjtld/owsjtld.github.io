@@ -155,6 +155,43 @@ main {
   gap: 12px;
 }
 
+/* 탭 모드(주니어/시니어) — html/css/js를 칸마다 쌓지 않고 탭 하나로 전환하며 보여준다.
+   .advanced-editor-toolbar/tabs/tab/fullscreen-btn 클래스는 advanced-editor.js와
+   똑같이 재사용해서 스타일도 그대로 물려받는다. */
+.playground-editors.tabbed {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.playground-editors.tabbed .code-editor {
+  height: 420px;
+}
+
+/* 전체화면 — 왼쪽 에디터만이 아니라 오른쪽 미리보기까지 두 칸 레이아웃 그대로
+   유지한 채 화면 전체로 펼친다("양면 유지" 요청). */
+.playground.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg);
+  padding: 20px;
+  overflow: auto;
+}
+
+.playground.fullscreen .playground-editors.tabbed,
+.playground.fullscreen .playground-preview {
+  height: 100%;
+}
+
+.playground.fullscreen .playground-editors.tabbed .code-editor {
+  flex: 1;
+  height: auto;
+}
+
 .editor-panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -505,4 +542,135 @@ main {
   background: rgba(229, 98, 107, 0.15);
   color: var(--fail);
   border: 1px solid var(--fail);
+}
+
+/* ---- 고급 에디터(멀티파일 탭 — 파일을 나눠서 import/export로 연결하는 시니어 미션 전용) ---- */
+
+.advanced-editor {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.advanced-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-alt);
+}
+
+.advanced-editor-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.advanced-editor-tab {
+  padding: 6px 14px;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.advanced-editor-tab:hover {
+  color: var(--text);
+}
+
+.advanced-editor-tab.active {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.advanced-editor .code-editor {
+  height: 360px;
+}
+
+.advanced-editor.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border: none;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.advanced-editor.fullscreen .code-editor {
+  flex: 1;
+  height: auto;
+}
+
+.advanced-run-btn {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent-strong);
+  color: #0b0d13;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+
+.advanced-run-btn:hover {
+  background: var(--accent);
+}
+
+.advanced-editor.fullscreen .advanced-run-btn {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+}
+
+/* .preview-frame 등 나머지는 hidden 속성이 아니라 이 .show 클래스로 보이고/숨긴다 —
+   [hidden] 기본 스타일(display:none)과 여기 display:flex가 같은 우선순위라 속성만
+   토글하면 항상 flex가 이겨버려서 안 숨겨지는 문제가 있다(사용자가 실제로 볼 수
+   있는 버그였을 것 — 미리 이렇게 피해서 만듦). */
+.advanced-preview-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  flex-direction: column;
+  background: var(--panel);
+}
+
+.advanced-preview-overlay.show {
+  display: flex;
+}
+
+.advanced-editor.fullscreen .advanced-preview-overlay {
+  position: fixed;
+}
+
+.advanced-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-alt);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.advanced-preview-overlay .preview-frame {
+  flex: 1;
+  border: none;
+  background: #fff;
 }

@@ -15,7 +15,7 @@ export default {
       "(사이드바, 관련 링크 등)</li>" +
     "</ul>" +
     "<p><strong>예시</strong></p>" +
-    "<pre><code>&lt;section&gt;\n  &lt;h2&gt;공지사항&lt;/h2&gt;\n  &lt;article&gt;\n" +
+    "<pre><code>&lt;section&gt;\n  &lt;h1&gt;공지사항&lt;/h1&gt;\n  &lt;article&gt;\n" +
     "    &lt;p&gt;오늘 새 글이 올라왔습니다.&lt;/p&gt;\n  &lt;/article&gt;\n&lt;/section&gt;\n" +
     "&lt;aside&gt;\n  &lt;p&gt;관련 링크: ...&lt;/p&gt;\n&lt;/aside&gt;</code></pre>" +
     "<p>에디터에 <code>section</code>, <code>article</code>, <code>aside</code> 태그를 각각 " +

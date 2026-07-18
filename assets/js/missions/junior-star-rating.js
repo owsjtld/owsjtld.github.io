@@ -48,6 +48,19 @@ export default {
         message: "별 3개를 각각 클릭했을 때 ." + className + " 클래스가 채워야 할 별에 붙도록 만들어보세요."
       };
     }
+    // 별 3개 모두, 그 별 근처에서 add/remove 중 하나가 호출되는지 확인 — 한 번의 클릭에
+    // 별 3개 전부를 무조건 add()만 해버리는(즉 항상 다 채워버리는) 코드를 걸러내기 위함.
+    for (var starNum = 1; starNum <= 3; starNum++) {
+      var nearActionRe = new RegExp(
+        "#star" + starNum + "[\\s\\S]{0,200}?classList\\s*\\.\\s*(add|remove)\\s*\\(\\s*['\"`]" + className + "['\"`]\\s*\\)"
+      );
+      if (!nearActionRe.test(js)) {
+        return {
+          pass: false,
+          message: "#star" + starNum + " 근처에서도 ." + className + " 클래스를 add 또는 remove 해보세요 (클릭한 별에 따라 채워지는 범위가 달라져야 해요)."
+        };
+      }
+    }
     var rule = findRuleForClass(code.css, className);
     if (!rule || Object.keys(rule.declarations).length === 0) {
       return { pass: false, message: "CSS에서 ." + className + " 클래스의 스타일(색 등)을 만들어보세요." };
