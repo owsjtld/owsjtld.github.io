@@ -1,0 +1,508 @@
+:root {
+  --bg: #0f1117;
+  --panel: #161925;
+  --panel-alt: #1d2130;
+  --border: #2a2f42;
+  --text: #e7e9f0;
+  --muted: #9aa1b5;
+  --accent: #6ea8fe;
+  --accent-strong: #4c8dff;
+  --ok: #4caf7d;
+  --fail: #e5626b;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--accent);
+}
+
+header.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+header.site-header .logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: var(--text);
+}
+
+header.site-header nav a {
+  margin-left: 18px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+header.site-header nav a:hover,
+header.site-header nav a.active {
+  color: var(--text);
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.hero {
+  text-align: center;
+  padding: 64px 16px;
+}
+
+.hero h1 {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 1.05rem;
+  margin-bottom: 32px;
+}
+
+.button-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn.primary {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #0b0d13;
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  background: var(--accent);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 48px;
+}
+
+.feature-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.feature-card h3 {
+  margin-top: 0;
+}
+
+/* ---- Playground (sandbox / mission 공용) ---- */
+
+.playground {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 860px) {
+  .playground {
+    grid-template-columns: 1fr;
+  }
+}
+
+.playground-editors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editor-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-panel label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-alt);
+}
+
+/* ---- 코드 에디터 (문법 강조 + 줄 번호, 외부 라이브러리 없이 직접 구현) ----
+   투명한 textarea 밑에 강조된 pre를 겹쳐두고 커서만 textarea에서 보이게 하는 방식.
+   둘 다 높이가 고정된 상자 안에서 각자 스크롤하다가 textarea의 스크롤 위치를 JS로
+   pre/줄번호 칸에 맞춰준다(그래서 resize는 지원하지 않음 — 셋의 높이가 어긋나면
+   깨진다). */
+
+.code-editor {
+  display: flex;
+  height: 220px;
+  background: var(--panel);
+}
+
+.code-gutter {
+  flex: 0 0 auto;
+  min-width: 2.4em;
+  padding: 12px 10px 12px 12px;
+  text-align: right;
+  color: var(--muted);
+  background: var(--panel);
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre;
+  user-select: none;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+.code-surface {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.code-highlight,
+.code-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 12px;
+  font-family: "Consolas", "D2Coding", monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.code-highlight {
+  color: var(--text);
+  pointer-events: none;
+}
+
+/* 브라우저 기본 스타일이 <code>에 font-family: monospace를 강제로 넣어서, 위
+   .code-highlight(부모 pre)에서 지정한 폰트를 안 물려받고 다른 폰트로 렌더링되는
+   문제가 있었다 — 그러면 같은 글자라도 textarea와 너비가 달라져서 커서 위치와
+   실제 글자가 어긋나 보인다. font: inherit로 부모(.code-highlight)의 폰트를
+   강제로 그대로 물려받게 한다. */
+.code-highlight code {
+  font: inherit;
+}
+
+.code-input {
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+.tok-comment { color: #6a9955; font-style: italic; }
+.tok-tag { color: #569cd6; }
+.tok-attr { color: #9cdcfe; }
+.tok-string { color: #ce9178; }
+.tok-keyword { color: #c586c0; }
+.tok-builtin { color: #4ec9b0; }
+.tok-number { color: #b5cea8; }
+.tok-color { color: #d7ba7d; }
+.tok-ident { color: #9cdcfe; }
+.tok-punct { color: var(--muted); }
+
+.playground-preview {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-alt);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.preview-frame {
+  flex: 1;
+  min-height: 320px;
+  border: none;
+  background: #fff;
+}
+
+/* ---- 미션 목록 ---- */
+
+.mission-filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.filter-btn.active {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #0b0d13;
+  font-weight: 600;
+}
+
+.mission-empty {
+  color: var(--muted);
+  padding: 24px 0;
+}
+
+.mission-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.mission-pagination .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mission-pagination .btn:disabled:hover {
+  border-color: var(--border);
+}
+
+.pagination-indicator {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.mission-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.mission-card {
+  display: block;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  text-decoration: none;
+  color: var(--text);
+  position: relative;
+}
+
+.mission-card:hover {
+  border-color: var(--accent);
+}
+
+.mission-card .level {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.mission-card h3 {
+  margin: 6px 0;
+}
+
+.mission-card .done-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.75rem;
+  color: var(--ok);
+  border: 1px solid var(--ok);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* ---- 미션 실행 페이지 ---- */
+
+.mission-header {
+  margin-bottom: 20px;
+}
+
+.inherited-note {
+  background: rgba(110, 168, 254, 0.12);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  margin: -6px 0 16px;
+}
+
+.mission-instructions {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.mission-instructions code {
+  background: var(--panel-alt);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.mission-instructions pre {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  overflow-x: auto;
+  /* 예시 코드는 "읽고 보는 용도"라 마우스로 긁어서 그대로 붙여넣지 못하게 막는다
+     (CLAUDE.md 정책 — 직접 타이핑하게 만드는 게 목적). copy 이벤트 자체를 막는
+     보강 처리는 mission-page.js에서 한다. */
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.mission-instructions pre code {
+  background: none;
+  padding: 0;
+  font-family: "Consolas", "D2Coding", monospace;
+}
+
+.demo-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.demo-col {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.demo-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-frame {
+  width: 100%;
+  height: 110px;
+  border: none;
+  background: #fff;
+}
+
+.mission-actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mission-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mission-actions .btn.primary:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.feedback {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  display: none;
+}
+
+.feedback.show {
+  display: inline-block;
+}
+
+.feedback.pass {
+  background: rgba(76, 175, 125, 0.15);
+  color: var(--ok);
+  border: 1px solid var(--ok);
+}
+
+.feedback.fail {
+  background: rgba(229, 98, 107, 0.15);
+  color: var(--fail);
+  border: 1px solid var(--fail);
+}
