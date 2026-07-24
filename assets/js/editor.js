@@ -191,15 +191,16 @@ function maybeAutoCloseTag(textarea, inputEvent) {
   textarea.selectionStart = textarea.selectionEnd = pos;
 }
 
-// "{"를 치면 "}"를 바로 뒤에 자동으로 만들어준다(예: { 입력 → {|}, 커서는 그 사이) —
-// maybeAutoCloseTag(HTML 태그)와 똑같은 이유·같은 패턴: CSS 규칙에서 닫는 중괄호를
-// 깜빡하는 걸 애초에 막는다(사용자가 명시적으로 요청, 2026-07-18). CSS/JS 칸 모두에
-// 적용된다(HTML 칸에도 적용은 되지만, HTML 내용에 "{"를 직접 쓸 일은 거의 없다).
-// "["/"("는 일부러 안 넣었다 — 특히 "("는 함수 호출(예: querySelector(...))에서
-// 훨씬 자주 쓰이는데, 닫는 괄호를 직접 타이핑해서 넘어가는(type-over) 처리까지
-// 없이 자동 삽입만 하면 오히려 중복 괄호가 더 자주 생길 위험이 있어 이번엔 범위를
-// "{" 하나로 좁혔다.
-var AUTO_CLOSE_BRACKETS = { "{": "}" };
+// 여는 문자를 치면 닫는 짝을 바로 뒤에 자동으로 만들어준다(예: { 입력 → {|}, 커서는
+// 그 사이) — maybeAutoCloseTag(HTML 태그)와 똑같은 이유·같은 패턴: 닫는 짝을
+// 깜빡하는 걸 애초에 막는다("{"는 사용자가 명시적으로 요청, 2026-07-18). 모든 칸에
+// 적용된다 — 따옴표(" ')는 HTML 속성값에서도 흔히 쓰인다.
+// "("/"\""/"'"는 처음엔 일부러 뺐었다 — 자동 삽입만 하고 닫는 문자를 직접 타이핑해서
+// 넘어가는(type-over) 처리가 없으면 오히려 중복 괄호/따옴표가 쌓이기 쉬웠기 때문
+// (특히 "("는 함수 호출에서 워낙 자주 씀). 이번에 maybeTypeOverClosing을 같이
+// 만들면서 그 문제가 해결되어 범위를 넓혔다(사용자 요청, 2026-07-24). "["는 아직
+// 요청받지 않아 그대로 뺐다 — 필요해지면 여기와 TYPE_OVER_CHARS 양쪽에 추가할 것.
+var AUTO_CLOSE_BRACKETS = { "{": "}", "(": ")", "\"": "\"", "'": "'" };
 
 function maybeAutoCloseBracket(textarea, inputEvent) {
   if (!inputEvent || inputEvent.inputType !== "insertText") return;
@@ -210,11 +211,39 @@ function maybeAutoCloseBracket(textarea, inputEvent) {
   var value = textarea.value;
   if (value.charAt(pos - 1) !== inputEvent.data) return;
   // 바로 뒤에 이미 닫는 짝이 있으면(예: 지웠다 다시 친 경우) 또 만들지 않는다 —
-  // maybeAutoCloseTag와 같은 이유의 같은 방어.
+  // maybeAutoCloseTag와 같은 이유의 같은 방어. (참고: 따옴표처럼 여는/닫는 문자가
+  // 같은 경우, 이 상황은 실제로는 대부분 maybeTypeOverClosing이 먼저 가로채서 여기까지
+  // 오지 않는다 — 그래도 이중 방어로 남겨둔다.)
   if (value.charAt(pos) === closeChar) return;
 
   textarea.value = value.slice(0, pos) + closeChar + value.slice(pos);
   textarea.selectionStart = textarea.selectionEnd = pos;
+}
+
+// 닫는 문자(}/)/"/')를 직접 타이핑했을 때, 바로 뒤에 이미 같은 문자가 있으면(자동
+// 닫기로 생겼든 원래 있던 것이든) 또 삽입하지 않고 그 문자 뒤로 커서만 넘긴다 —
+// 이른바 "type-over". 이게 없으면 자동으로 닫아준 짝을 직접 타이핑해서 넘어가려 할
+// 때마다 괄호/따옴표가 중복으로 쌓인다(사용자가 지적한 문제, 2026-07-24 추가).
+// "{"/"}"도 포함시켰다 — 기존에 "{"만 자동 닫기가 있었는데 type-over가 없어서 똑같이
+// 중복 문제가 있었기 때문. 매칭 실패(바로 뒤에 같은 문자가 없음)면 아무 것도 안 하고
+// false를 돌려줘서, 호출하는 쪽이 평소대로(자동 닫기/내어쓰기) 처리를 계속하게 한다 —
+// 특히 따옴표는 여는 문자와 닫는 문자가 같아서, "새로 여는 것"과 "이미 있는 걸 닫고
+// 넘어가는 것"을 구분하는 유일한 방법이 "바로 뒤에 같은 문자가 있는지"이다.
+var TYPE_OVER_CHARS = ["}", ")", "\"", "'"];
+
+function maybeTypeOverClosing(textarea, inputEvent) {
+  if (!inputEvent || inputEvent.inputType !== "insertText") return false;
+  var typedChar = inputEvent.data;
+  if (TYPE_OVER_CHARS.indexOf(typedChar) === -1) return false;
+  var pos = textarea.selectionStart;
+  if (pos !== textarea.selectionEnd) return false;
+  var value = textarea.value;
+  if (value.charAt(pos - 1) !== typedChar) return false;
+  if (value.charAt(pos) !== typedChar) return false;
+
+  textarea.value = value.slice(0, pos - 1) + value.slice(pos);
+  textarea.selectionStart = textarea.selectionEnd = pos;
+  return true;
 }
 
 var INDENT_UNIT = "  "; // 들여쓰기 한 칸 = 스페이스 2개
@@ -419,7 +448,7 @@ function createPlayground(root, options) {
           '<span>' + (autoRun ? "미리보기" : "미리보기 (실행 버튼을 눌러야 갱신돼요)") + '</span>' +
           '<button type="button" class="btn run-btn">실행 ▶</button>' +
         '</div>' +
-        '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts"></iframe>' +
+        '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts allow-modals"></iframe>' +
       '</div>' +
     '</div>';
 
@@ -519,8 +548,10 @@ function createPlayground(root, options) {
       });
       sharedInput.addEventListener("input", function (e) {
         if (activeKey === "html") maybeAutoCloseTag(sharedInput, e);
-        maybeAutoCloseBracket(sharedInput, e);
-        maybeOutdentClosingBracket(sharedInput, e);
+        if (!maybeTypeOverClosing(sharedInput, e)) {
+          maybeAutoCloseBracket(sharedInput, e);
+          maybeOutdentClosingBracket(sharedInput, e);
+        }
         updateVisual();
         scheduleRun();
       });
@@ -584,8 +615,10 @@ function createPlayground(root, options) {
         });
         inputs[key].addEventListener("input", function (e) {
           if (key === "html") maybeAutoCloseTag(inputs[key], e);
-          maybeAutoCloseBracket(inputs[key], e);
-          maybeOutdentClosingBracket(inputs[key], e);
+          if (!maybeTypeOverClosing(inputs[key], e)) {
+            maybeAutoCloseBracket(inputs[key], e);
+            maybeOutdentClosingBracket(inputs[key], e);
+          }
           updateVisual(key);
           scheduleRun();
         });

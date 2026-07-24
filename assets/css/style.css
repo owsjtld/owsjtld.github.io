@@ -219,6 +219,17 @@ main {
 .code-editor {
   display: flex;
   height: 220px;
+  min-height: 0; /* 전체화면(fullscreen)에서 height:auto+flex:1로 바뀔 때 필요 — flex
+    아이템의 기본 자동 최소 높이(min-height:auto)는 overflow:visible인 자식의 실제
+    콘텐츠 크기를 반영한다. .code-gutter(줄 번호)는 position:absolute가 아닌 일반
+    흐름의 진짜 텍스트라서, 코드 줄이 많아지면 이 자동 최소 높이가 뷰포트보다 커져
+    .code-editor를 억지로 그만큼 키워버린다. 그러면 넘치는 부분이 부모의
+    height:100%+overflow:hidden(.playground-editors.tabbed 등)에 그대로 잘려나가고,
+    textarea 자신은 이미 내용에 맞게 커져버려서 내부 스크롤바도 안 생기는 이중 문제가
+    생긴다(전체화면에서 코드가 길어지면 위아래로 스크롤이 전혀 안 되던 버그, 사용자가
+    실제로 발견함, 2026-07-24) — min-height:0으로 이 자동 최소 높이를 꺼서 flex:1이
+    실제로 뷰포트 안으로 줄어들 수 있게 하면, textarea 자체의 overflow:auto가 다시
+    정상적으로 내부 스크롤을 만들어준다. */
   background: var(--panel);
 }
 
