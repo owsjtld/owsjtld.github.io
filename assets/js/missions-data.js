@@ -70,7 +70,6 @@ import jsTemplateLiteralIntro from "./missions/js-template-literal-intro.js";
 import jsArrayMapIntro from "./missions/js-array-map-intro.js";
 import jsDatasetIntro from "./missions/js-dataset-intro.js";
 import jsEventDelegationIntro from "./missions/js-event-delegation-intro.js";
-import jsLocalstorageIntro from "./missions/js-localstorage-intro.js";
 import jsUrlParamsIntro from "./missions/js-url-params-intro.js";
 import jsModuleImportIntro from "./missions/js-module-import-intro.js";
 import seniorXssTextcontent from "./missions/senior-xss-textcontent.js";
@@ -121,7 +120,6 @@ export var MISSIONS = [
   jsArrayMapIntro,
   jsDatasetIntro,
   jsEventDelegationIntro,
-  jsLocalstorageIntro,
   jsUrlParamsIntro,
   jsModuleImportIntro,
   seniorXssTextcontent,

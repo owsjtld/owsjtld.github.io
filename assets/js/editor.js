@@ -376,6 +376,54 @@ function handleTabKey(textarea, shiftKey) {
   textarea.selectionStart = textarea.selectionEnd = pos - removedBeforePos;
 }
 
+/**
+ * 미리보기 iframe 안에서 잡히지 않은 에러/Promise 거부를 postMessage로 부모에 보고하는
+ * 부트스트랩 스크립트. srcdoc 문서의 <head> 맨 앞에 심어서 사용자 코드보다 먼저
+ * 실행되게 한다 — 이렇게 해야 사용자 코드 실행 도중 언제 에러가 나든 다 잡힌다.
+ * allow-same-origin 없는 sandbox(매번 opaque origin)여도 postMessage 자체는 되는 걸
+ * 헤드리스 크롬으로 스파이크 확인했다(2026-07-24) — 받는 쪽에서는 event.origin이
+ * 항상 "null"이라 못 쓰고, 대신 event.source를 iframe.contentWindow와 비교해서 우리
+ * iframe에서 온 메시지인지 판별한다(createPreviewConsole 참고).
+ */
+function buildPreviewErrorBridgeScript() {
+  return (
+    "<script>" +
+    "window.addEventListener('error', function (event) {" +
+    "  try { window.parent.postMessage({ source: 'code-learn-preview', message: event.message }, '*'); } catch (e) {}" +
+    "});" +
+    "window.addEventListener('unhandledrejection', function (event) {" +
+    "  try {" +
+    "    var reason = event.reason;" +
+    "    var text = reason && reason.message ? reason.message : String(reason);" +
+    "    window.parent.postMessage({ source: 'code-learn-preview', message: '처리되지 않은 Promise 거부: ' + text }, '*');" +
+    "  } catch (e) {}" +
+    "});" +
+    "<" + "/script>"
+  );
+}
+
+/**
+ * 미리보기 iframe과 짝지어진 "콘솔" 표시 영역(consoleEl)을 관리한다. editor.js의
+ * createPlayground와 advanced-editor.js의 createAdvancedPlayground가 공통으로 쓴다.
+ * srcdoc을 새로 실행할 때마다(각 run()) clear()를 호출해서 이전 실행의 에러가 남아있지
+ * 않게 해야 한다.
+ */
+function createPreviewConsole(iframe, consoleEl) {
+  window.addEventListener("message", function (event) {
+    if (event.source !== iframe.contentWindow) return;
+    var data = event.data;
+    if (!data || data.source !== "code-learn-preview") return;
+    var line = document.createElement("div");
+    line.textContent = data.message;
+    consoleEl.appendChild(line);
+  });
+  return {
+    clear: function () {
+      consoleEl.textContent = "";
+    }
+  };
+}
+
 function createPlayground(root, options) {
   options = options || {};
   var panels = options.panels || ["html", "css", "js"];
@@ -449,11 +497,13 @@ function createPlayground(root, options) {
           '<button type="button" class="btn run-btn">실행 ▶</button>' +
         '</div>' +
         '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts allow-modals"></iframe>' +
+        '<pre class="preview-console" aria-live="polite"></pre>' +
       '</div>' +
     '</div>';
 
   var iframe = root.querySelector(".preview-frame");
   var runBtn = root.querySelector(".run-btn");
+  var previewConsole = createPreviewConsole(iframe, root.querySelector(".preview-console"));
 
   // 탭 모드/스택 모드는 DOM 구조가 아예 달라서(공유 textarea 하나 vs 칸마다 textarea)
   // currentValue/updateVisual/syncScroll/bindEditorEvents를 모드별로 따로 만들어
@@ -630,10 +680,12 @@ function createPlayground(root, options) {
   }
 
   function run() {
+    previewConsole.clear();
     var css = currentValue("css");
     var js = currentValue("js");
     var doc =
       "<!doctype html><html><head><meta charset=\"utf-8\">" +
+      buildPreviewErrorBridgeScript() +
       (css ? "<style>" + css + "</style>" : "") +
       "</head><body>" +
       currentValue("html") +
