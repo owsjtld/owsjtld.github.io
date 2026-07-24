@@ -333,6 +333,30 @@ main {
   background: #fff;
 }
 
+/* 미리보기 iframe 안 에러를 보여주는 터미널 느낌의 콘솔. 비어있을 땐(에러 없음)
+   :empty로 안내 문구만 흐리게 보여준다 — editor.js/advanced-editor.js가 run()마다
+   textContent를 비웠다 채웠다 하며 이 상태를 오간다. */
+.preview-console {
+  margin: 0;
+  padding: 6px 10px;
+  min-height: 32px;
+  max-height: 110px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  color: #ff6b6b;
+  font-family: Consolas, "D2Coding", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-top: 1px solid var(--border);
+}
+
+.preview-console:empty::before {
+  content: "에러 없음";
+  color: #888;
+}
+
 /* ---- 미션 목록 ---- */
 
 .mission-filter-bar {

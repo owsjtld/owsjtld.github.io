@@ -41,7 +41,14 @@
     js: "document.getElementById('my-btn').addEventListener('click', function () {\n  alert('버튼이 눌렸어요!');\n});"
   };
 
-  var pg = createPlayground(document.getElementById("playground"), STARTER);
+  var pg = createPlayground(document.getElementById("playground"), {
+    html: STARTER.html,
+    css: STARTER.css,
+    js: STARTER.js,
+    // 미션 페이지와 같은 탭 UI로 통일한다(mission-page.js와 동일한 이유 —
+    // html/css/js를 한 화면에 쌓아 보여주는 대신 탭으로 전환하며 봄).
+    tabbed: true
+  });
 
   document.getElementById("reset-btn").addEventListener("click", function () {
     pg.setCode(STARTER);

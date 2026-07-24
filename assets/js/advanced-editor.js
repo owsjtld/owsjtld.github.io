@@ -107,7 +107,9 @@ function buildAdvancedSrcdoc(files, entry, bodyHtml) {
     "\n}";
 
   return (
-    "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>" +
+    "<!doctype html><html><head><meta charset=\"utf-8\">" +
+    buildPreviewErrorBridgeScript() +
+    "</head><body>" +
     (bodyHtml || "") +
     "<script>" + bootstrap + "<" + "/script>" +
     "</body></html>"
@@ -170,6 +172,7 @@ function createAdvancedPlayground(root, options) {
           '<button type="button" class="btn advanced-preview-close">닫기 ✕</button>' +
         "</div>" +
         '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts allow-modals"></iframe>' +
+        '<pre class="preview-console" aria-live="polite"></pre>' +
       "</div>" +
     "</div>";
 
@@ -183,6 +186,7 @@ function createAdvancedPlayground(root, options) {
   var previewOverlay = root.querySelector(".advanced-preview-overlay");
   var previewCloseBtn = root.querySelector(".advanced-preview-close");
   var iframe = root.querySelector(".preview-frame");
+  var previewConsole = createPreviewConsole(iframe, root.querySelector(".preview-console"));
 
   // 지금 활성 탭의 textarea 내용을 메모리상 filesState에 반영한다. 탭을 바꾸거나
   // run()/getCode()를 부르기 "직전"에 반드시 호출해야 한다 — 안 하면 방금 타이핑한
@@ -243,6 +247,7 @@ function createAdvancedPlayground(root, options) {
 
   function run() {
     flushActiveFile();
+    previewConsole.clear();
     var srcdoc = buildAdvancedSrcdoc(filesState, entry, bodyHtml);
     iframe.setAttribute("srcdoc", srcdoc);
     previewOverlay.classList.add("show");
