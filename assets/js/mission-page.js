@@ -17,6 +17,30 @@ import { MISSIONS } from "./missions-data.js";
     return new URLSearchParams(window.location.search).get(name);
   }
 
+  // code.js와(있다면) code.html 안 <script> 태그들의 문법이 유효한지만 확인한다.
+  // new Function(문자열)은 그 문자열을 함수 "본문"으로 파싱만 하고, 반환된 함수를
+  // 호출하지 않는 한 안의 코드는 전혀 실행되지 않는다 — 그래서 이 검사는 "코드를
+  // 실행해서 결과를 훔쳐보지 않는다"는 채점 보안 원칙을 깨지 않는다. 문법이 멀쩡하면
+  // null을, 문법 오류가 있으면 그 Error 객체를 돌려준다.
+  function findJsSyntaxError(code) {
+    var sources = [];
+    if (code.js) sources.push(code.js);
+    if (code.html) {
+      var doc = new DOMParser().parseFromString(code.html, "text/html");
+      Array.prototype.forEach.call(doc.querySelectorAll("script"), function (el) {
+        if (el.textContent.trim()) sources.push(el.textContent);
+      });
+    }
+    for (var i = 0; i < sources.length; i++) {
+      try {
+        new Function(sources[i]);
+      } catch (e) {
+        return e;
+      }
+    }
+    return null;
+  }
+
   var id = getParam("id");
   var missionIndex = MISSIONS.findIndex(function (m) { return m.id === id; });
   var mission = MISSIONS[missionIndex];
@@ -138,6 +162,26 @@ import { MISSIONS } from "./missions-data.js";
     }
     var code = pg.getCode();
     saveCode(mission.id, code);
+
+    // 채점(check)은 코드를 실행하지 않고 문자열/정규식만 보기 때문에, 문법 자체가
+    // 깨진 JS(예: function ("이름") { ... }처럼 매개변수 자리에 문자열을 넣는 실수)도
+    // 정규식 패턴만 맞으면 그냥 "통과"로 잘못 넘어간다 — 실제로는 스크립트 전체가
+    // 파싱 단계에서 실패해서 클릭해도 아무 반응이 없는데도 그렇다(사용자가 실제로
+    // 겪고 발견한 문제, 2026-07-18). 그래서 개별 미션의 check()를 부르기 전에
+    // 공통으로 한 번 문법만 먼저 검사한다 — new Function(문자열)은 그 문자열을
+    // *파싱만* 하고 실행은 안 하므로(반환된 함수를 호출하지 않음), "실행 결과를
+    // 훔쳐보지 않는다"는 채점 보안 원칙을 안 건드린다. advancedEditor(ES 모듈,
+    // import/export 문법) 미션은 Function 생성자로 파싱이 아예 안 되는 문법이라
+    // 이번엔 검사 대상에서 뺐다.
+    if (!mission.advancedEditor) {
+      var syntaxError = findJsSyntaxError(code);
+      if (syntaxError) {
+        feedbackEl.textContent = "자바스크립트 문법에 오류가 있어요: " + syntaxError.message;
+        feedbackEl.className = "feedback show fail";
+        return;
+      }
+    }
+
     var result = mission.check(code);
     feedbackEl.textContent = result.message;
     feedbackEl.className = "feedback show " + (result.pass ? "pass" : "fail");

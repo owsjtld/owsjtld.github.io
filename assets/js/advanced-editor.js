@@ -169,7 +169,7 @@ function createAdvancedPlayground(root, options) {
           "<span>미리보기</span>" +
           '<button type="button" class="btn advanced-preview-close">닫기 ✕</button>' +
         "</div>" +
-        '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts"></iframe>' +
+        '<iframe class="preview-frame" title="미리보기" sandbox="allow-scripts allow-modals"></iframe>' +
       "</div>" +
     "</div>";
 
@@ -269,8 +269,10 @@ function createAdvancedPlayground(root, options) {
     scheduleSave();
   });
   input.addEventListener("input", function (e) {
-    maybeAutoCloseBracket(input, e);
-    maybeOutdentClosingBracket(input, e);
+    if (!maybeTypeOverClosing(input, e)) {
+      maybeAutoCloseBracket(input, e);
+      maybeOutdentClosingBracket(input, e);
+    }
     updateVisual();
     scheduleSave();
   });
